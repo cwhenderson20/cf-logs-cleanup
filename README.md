@@ -1,0 +1,24 @@
+# cf-logs-cleanup
+
+- Take options:
+    - Bucket
+    - Prefix (folder)
+    - Start date (support relative units)
+    - End date (support relative units)
+    - AWS Access Key ID
+    - AWS Secret Access Key
+- Steps
+    - Request one object and parse until the first `.` to get the CFID
+    - For that CFID, list objects with the prefix, starting at the earliest date. E.g.: `Bucket/Folder/E123456790.2014-01-01-00`
+    - Make sure the response isn't truncated; if it is, get the remaining results and combine into one object
+    - For each hour, download and concatenate all .gz files into one (run 2 to 3 hours at a time) [tmp folder]
+    - Check to see if the resulting file already exists in desired location (subfolder by year, month, day) 
+    - Unzip the concatenated file and read it line-by-line
+        - If the resulting file doesn't exist in the desired location, add a header first 
+        - If the first character of the line is a `#`, ignore it
+        - Otherwise, push it into a writable stream with a newline
+    - Rezip when processed
+    - Name as hour value only
+    - If resulting file exists in location, download the file, concat, and reupload
+        - Otherwise, simply upload
+    - Repeat until no files left in subfolder
