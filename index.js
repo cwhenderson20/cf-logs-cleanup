@@ -2,12 +2,12 @@ const config = require("./lib/config");
 
 const async = require("async");
 const AWS = require("aws-sdk");
-const moment = require("moment");
 const bunyan = require("bunyan");
+const moment = require("moment");
 const processHour = require("./lib/processHour");
-const { isInDateRange } = require("./lib/util");
+const processDay = require("./lib/processDay");
 
-const logger = bunyan.createLogger({ name: "cf-logs-cleanup" });
+const lastProcessableDate = moment().subtract(45, "days").startOf("day");
 const s3 = new AWS.S3({
 	params: {
 		Bucket: config.bucket,
@@ -16,37 +16,47 @@ const s3 = new AWS.S3({
 	accessKeyId: config.aws.accessKeyId,
 	secretAccessKey: config.aws.secretAccessKey
 });
+let listObjectResults;
 
-console.log(config.prefix);
-
-s3.listObjectsV2({ MaxKeys: 2, Prefix: config.prefix }, (err, data) => {
-	if (err) {
-		console.log(err);
-		process.exit(1);
-	}
-
-	console.log(data);
-
-	if (data.Contents.length === 2) {
-		const firstObject = data.Contents[1];
-		const filename = firstObject.Key.substring(firstObject.Key.lastIndexOf(config.prefix) + config.prefix.length);
-		const cfid = filename.split(".").shift();
-		const currentDate = moment(config.start);
-
-		console.log(cfid);
-
-		async.whilst(
-			() => isInDateRange(currentDate),
-			(cb) => processHour(s3, cfid, currentDate, cb),
-			(err) => {
-				if (err) {
-					console.error(err);
-					process.exit(1);
-				}
-
-				console.log("DONE");
-				process.exit(0);
+async.during(
+	(cb) => {
+		s3.listObjectsV2({ MaxKeys: 2, Prefix: config.prefix }, (err, data) => {
+			if (err) {
+				return cb(err);
 			}
-		);
+
+			if (!data.Contents.length) {
+				return cb(null, false);
+			}
+
+			listObjectResults = data;
+
+			if (data.Contents[0].Key.slice(-1) === "/") {
+				if (data.Contents[1]) {
+					return cb(null, shouldProcess(data.Contents[1].Key));
+				}
+				return cb();
+			}
+
+			cb(null, shouldProcess(data.Contents[0].Key));
+		});
+	},
+	(cb) => processDay(s3, listObjectResults, cb),
+	(err) => {
+		if (err) {
+			console.error(err);
+			process.exit(1);
+		}
+
+		console.log("DONE");
+		process.exit(0);
 	}
-});
+);
+
+function shouldProcess(key) {
+	const filename = key.substring(key.lastIndexOf(config.prefix) + config.prefix.length);
+	const dateTime = filename.split(".")[1];
+	const date = moment(dateTime.substring(0, 10));
+
+	return date.isBefore(lastProcessableDate);
+}
