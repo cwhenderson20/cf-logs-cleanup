@@ -9,6 +9,9 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
+  "bin": {
+      "cf-logs-cleanup": "./bin/cf-logs-cleanup.js"
+  },
   "keywords": [],
   "author": "Chris Henderson <chris@app-press.com>",
   "license": "ISC",
