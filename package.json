@@ -1,6 +1,6 @@
 {
   "name": "cf-logs-cleanup",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "engines": {
     "node": ">=6"
   },
@@ -39,9 +39,20 @@
   },
   "xo": {
     "rules": {
-        "arrow-parens": [2, "always"],
-        "no-unused-expressions": [2, { "allowShortCircuit": true }],
-        "object-curly-spacing": [2, "always"]
+      "arrow-parens": [
+        2,
+        "always"
+      ],
+      "no-unused-expressions": [
+        2,
+        {
+          "allowShortCircuit": true
+        }
+      ],
+      "object-curly-spacing": [
+        2,
+        "always"
+      ]
     }
   }
 }
