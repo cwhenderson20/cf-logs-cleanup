@@ -12,9 +12,15 @@
   "bin": {
     "cf-logs-cleanup": "./bin/cf-logs-cleanup.js"
   },
-  "keywords": [],
-  "author": "Chris Henderson <chris@app-press.com>",
-  "license": "ISC",
+  "keywords": [
+    "cloudfront",
+    "log",
+    "logs",
+    "aws",
+    "clean"
+  ],
+  "author": "Chris Henderson <cwhenderson20@gmail.com>",
+  "license": "MIT",
   "devDependencies": {
     "@app-press/eslint-config-app-press": "2.2.0",
     "eslint": "3.14.1",
