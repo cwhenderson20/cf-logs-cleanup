@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
-const config = require("../lib/config");
-const processLogs = require("../index");
+const config = require('../lib/config');
+const processLogs = require('../index');
 
 processLogs(config, (err) => {
 	if (err) {
@@ -9,6 +9,6 @@ processLogs(config, (err) => {
 		process.exit(1);
 	}
 
-	console.log("Completed without error");
+	console.log('Completed without error');
 	process.exit(0);
 });

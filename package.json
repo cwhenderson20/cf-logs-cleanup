@@ -7,7 +7,7 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "xo"
   },
   "bin": {
     "cf-logs-cleanup": "./bin/cf-logs-cleanup.js"
@@ -18,7 +18,8 @@
   "devDependencies": {
     "@app-press/eslint-config-app-press": "2.2.0",
     "eslint": "3.14.1",
-    "eslint-plugin-node": "3.0.5"
+    "eslint-plugin-node": "3.0.5",
+    "xo": "0.17.1"
   },
   "dependencies": {
     "async": "2.1.4",
@@ -29,5 +30,12 @@
     "moment": "2.17.1",
     "tmp": "0.0.31",
     "yargs": "6.6.0"
+  },
+  "xo": {
+    "rules": {
+        "arrow-parens": [2, "always"],
+        "no-unused-expressions": [2, { "allowShortCircuit": true }],
+        "object-curly-spacing": [2, "always"]
+    }
   }
 }
