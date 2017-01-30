@@ -2,7 +2,7 @@
   "name": "cf-logs-cleanup",
   "version": "1.0.0",
   "engines": {
-    "node": ">=6.9.0"
+    "node": ">=6"
   },
   "description": "",
   "main": "index.js",
@@ -16,18 +16,18 @@
   "author": "Chris Henderson <chris@app-press.com>",
   "license": "ISC",
   "devDependencies": {
-    "@app-press/eslint-config-app-press": "2.1.2",
-    "eslint": "3.12.2",
+    "@app-press/eslint-config-app-press": "2.2.0",
+    "eslint": "3.14.1",
     "eslint-plugin-node": "3.0.5"
   },
   "dependencies": {
     "async": "2.1.4",
-    "aws-sdk": "2.7.18",
+    "aws-sdk": "2.9.0",
     "bunyan": "1.8.5",
     "concat-files": "0.1.1",
-    "debug": "~2.6.0",
+    "debug": "2.6.0",
     "moment": "2.17.1",
     "tmp": "0.0.31",
-    "yargs": "6.5.0"
+    "yargs": "6.6.0"
   }
 }

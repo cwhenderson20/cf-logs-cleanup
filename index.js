@@ -1,43 +1,51 @@
-const config = require("./lib/config");
-
 const async = require("async");
-const AWS = require("aws-sdk");
 const debug = require("debug")("cf");
 const moment = require("moment");
+const checkConfig = require("./lib/checkConfig");
 const processDay = require("./lib/processDay");
 
-const lastProcessableDate = moment().subtract(45, "days").startOf("day");
-const s3 = new AWS.S3({
-	params: {
-		Bucket: config.bucket,
-		Delimiter: "/",
-	},
-	accessKeyId: config.aws.accessKeyId,
-	secretAccessKey: config.aws.secretAccessKey
-});
 let listObjectResults;
 
-if (config.cfids && config.cfids.length) {
-	debug("CFID(s) specified, processing each in series");
-	async.eachLimit(config.cfids, 1, processDistribution, reportAndExit);
-} else {
-	debug("No CFIDs specified, processing all records");
-	processDistribution(null, reportAndExit);
+function processLogs(config, cb) {
+	config = checkConfig(config);
+
+	if (config.cfids && config.cfids.length) {
+		debug("CFID(s) specified, processing each in series");
+		async.eachLimit(
+			config.cfids, 1,
+			(cfid, eachCb) => processDistribution(config, cfid, eachCb),
+			logAndReturn
+		);
+	} else {
+		debug("No CFIDs specified, processing all records");
+		processDistribution(config, null, logAndReturn);
+	}
+
+	function logAndReturn(err) {
+		if (err) {
+			debug("Completed with errors");
+			return cb(err);
+		}
+
+		debug("Completed without error");
+		cb();
+	}
 }
 
-function processDistribution(cfid, cb) {
+function processDistribution(config, cfid, cb) {
 	const prefix = `${config.prefix || ""}${cfid || ""}`;
 
 	debug(`Searching for records in ${config.bucket}/${prefix}`);
 
 	async.during(
-		(cb) => probe(prefix, null, cb),
-		(cb) => processDay(s3, listObjectResults, cb),
+		(cb) => probe(config, prefix, null, cb),
+		(cb) => processDay(config, listObjectResults, cb),
 		cb
 	);
 }
 
-function probe(prefix, token, cb) {
+function probe(config, prefix, token, cb) {
+	const { s3 } = config;
 	const listObjectsConfig = { MaxKeys: 2, Prefix: prefix, ContinuationToken: token };
 
 	s3.listObjectsV2(listObjectsConfig, (err, data) => {
@@ -52,7 +60,7 @@ function probe(prefix, token, cb) {
 
 		if (!data.Contents.length && data.IsTruncated) {
 			debug("No results returned but response is truncated, probing again");
-			return probe(prefix, data.NextContinuationToken, cb);
+			return probe(config, prefix, data.NextContinuationToken, cb);
 		}
 
 		listObjectResults = data;
@@ -69,7 +77,7 @@ function probe(prefix, token, cb) {
 		analyzeResult(0);
 
 		function analyzeResult(index) {
-			const isProcessable = shouldProcess(data.Contents[index].Key);
+			const isProcessable = shouldProcess(data.Contents[index].Key, config.lastProcessableDate);
 
 			if (isProcessable) {
 				debug(`Result [${index}] is processable`);
@@ -78,7 +86,7 @@ function probe(prefix, token, cb) {
 
 			if (data.isTruncated) {
 				debug(`Result [${index}] is not processable, but response is truncated, probing again`);
-				return probe(prefix, data.NextContinuationToken, cb);
+				return probe(config, prefix, data.NextContinuationToken, cb);
 			}
 
 			debug("Results are not processable");
@@ -87,17 +95,7 @@ function probe(prefix, token, cb) {
 	});
 }
 
-function reportAndExit(err) {
-	if (err) {
-		console.error(err);
-		process.exit(1);
-	}
-
-	console.log("DONE");
-	process.exit(0);
-}
-
-function shouldProcess(key) {
+function shouldProcess(key, lastProcessableDate) {
 	const filename = key.split("/").pop();
 	const dateTime = filename.split(".")[1] || "";
 	const dateTimeParts = dateTime.split("-").map((part) => {
@@ -135,3 +133,5 @@ function shouldProcess(key) {
 
 	return processable;
 }
+
+module.exports = processLogs;
